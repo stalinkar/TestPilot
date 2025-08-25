@@ -1,0 +1,29 @@
+[
+  {
+    "action": "navigate",
+    "url": "https://demo.applitools.com/"
+  },
+  {
+    "action": "fill",
+    "selector": "#username",
+    "text": "admin"
+  },
+  {
+    "action": "fill",
+    "selector": "#password",
+    "text": "admin"
+  },
+  {
+    "action": "click",
+    "selector": "#log-in"
+  },
+  {
+    "action": "wait_for",
+    "selector": "body",
+    "timeout": 5000
+  },
+  {
+    "action": "screenshot",
+    "save": true
+  }
+]
