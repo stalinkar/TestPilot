@@ -1,0 +1,29 @@
+[
+  {
+    "action": "navigate",
+    "url": "https://www.saucedemo.com/"
+  },
+  {
+    "action": "fill",
+    "selector": "#user-name",
+    "text": "standard_user"
+  },
+  {
+    "action": "fill",
+    "selector": "#password",
+    "text": "secret_sauce"
+  },
+  {
+    "action": "click",
+    "selector": "#login-button"
+  },
+  {
+    "action": "wait_for",
+    "selector": "body",
+    "timeout": 5000
+  },
+  {
+    "action": "screenshot",
+    "save": false
+  }
+]

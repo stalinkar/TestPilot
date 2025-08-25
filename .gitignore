@@ -208,3 +208,5 @@ __marimo__/
 
 # result
 target/
+# example
+examples/

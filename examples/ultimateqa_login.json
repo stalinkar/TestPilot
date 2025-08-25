@@ -1,0 +1,29 @@
+[
+  {
+    "action": "navigate",
+    "url": "https://courses.ultimateqa.com/users/sign_in"
+  },
+  {
+    "action": "fill",
+    "selector": "#user_email",
+    "text": "<USERNAME>"
+  },
+  {
+    "action": "fill",
+    "selector": "#user_password",
+    "text": "<PASSWORD>"
+  },
+  {
+    "action": "click",
+    "selector": "button[type=submit]"
+  },
+  {
+    "action": "wait_for",
+    "selector": "body",
+    "timeout": 5000
+  },
+  {
+    "action": "screenshot",
+    "save": false
+  }
+]
