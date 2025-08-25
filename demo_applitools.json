@@ -1,21 +1,21 @@
 [
   {
     "action": "navigate",
-    "url": "https://courses.ultimateqa.com/users/sign_in"
+    "url": "https://demo.applitools.com/"
   },
   {
     "action": "fill",
-    "selector": "#user_email",
-    "text": "<USERNAME>"
+    "selector": "#username",
+    "text": "admin"
   },
   {
     "action": "fill",
-    "selector": "#user_password",
-    "text": "<PASSWORD>"
+    "selector": "#password",
+    "text": "admin"
   },
   {
     "action": "click",
-    "selector": "button[type=submit]"
+    "selector": "#log-in"
   },
   {
     "action": "wait_for",
@@ -24,6 +24,6 @@
   },
   {
     "action": "screenshot",
-    "save": false
+    "save": true
   }
 ]

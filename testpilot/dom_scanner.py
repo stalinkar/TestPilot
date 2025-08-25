@@ -66,7 +66,8 @@ async def find_login_elements_dynamic(page):
         if su_el >= su: su, cand_user = su_el, el
         if sp_el >= sp: sp, cand_pass = sp_el, el
 
-    btns = await page.query_selector_all("button, input[type='submit']")
+    btns = await page.query_selector_all("button, input[type='submit'], [role='button'], *:has-text('Sign in'), "
+                                         "*:has-text('Log in')")
     cand_btn, sb = None, -1
     for el in btns:
         sbtn = await score_login_button(el)

@@ -6,6 +6,7 @@ from .dom_scanner import find_login_elements_dynamic
 from .actions import init_browser, close_browser, navigate, fill, click, wait_for, screenshot, REPORTS_DIR
 
 
+# ----------- NL -> Flow -----------
 async def nl_to_flow_internal(prompt: str, headless=True, wait_selector=None):
     parsed = parse_prompt(prompt)
     url = normalize_url(parsed["url"])
@@ -99,7 +100,6 @@ async def run_flow(steps: list):
 
     for r in results:
         output = r["output"]
-        print(output)
         screenshot_html = ""
         if isinstance(output, dict) and "screenshot" in output:
             output = output["screenshot"]
