@@ -41,6 +41,7 @@ async def run_flow(steps: list):
     start_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     # report_id = f"flow_{start_time}_{uuid.uuid4().hex[:6]}"
     report_id = f"flow_{start_time}"
+    os.makedirs(REPORTS_DIR, exist_ok=True)
     json_report_file = os.path.join(REPORTS_DIR, f"{report_id}.json")
     html_report_file = os.path.join(REPORTS_DIR, f"{report_id}.html")
 

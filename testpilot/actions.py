@@ -65,6 +65,7 @@ async def screenshot(selector: str = None, save: bool = False):
         img = await page.screenshot(full_page=True)
 
     if save:
+        os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
         path = os.path.join(SCREENSHOTS_DIR, f"screenshot_{uuid.uuid4().hex}.png")
         with open(path, "wb") as f: f.write(img)
         return {"status": "screenshot_saved", "path": path}
