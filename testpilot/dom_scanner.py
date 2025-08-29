@@ -1,4 +1,4 @@
-from .utils import contains_any, safe, USERNAME_HINTS, PASSWORD_HINTS, LOGIN_TEXT_HINTS
+from .utils import contains_any, safe, USERNAME_HINTS, PASSWORD_HINTS, LOGIN_TEXT_HINTS, label_text_for
 
 
 async def build_best_selector(el):
@@ -61,42 +61,72 @@ async def get_label_text(page, el):
 
 
 async def score_username_input(page, el):
-    if not await is_visible(el): return -1
+    if not await is_visible(el):
+        return -1
+
     t = (await el.get_attribute("type") or "").lower()
     ph = await el.get_attribute("placeholder") or ""
-    lab = await el.get_attribute("aria-label") or ""
-    lbl_text = await get_label_text(page, el) or ""
+    name = await el.get_attribute("name") or ""
+    id_ = await el.get_attribute("id") or ""
+    cls = await el.get_attribute("class") or ""
+    lab = await label_text_for(page, el)
 
     score = 0
-    if t in ("text", "email"): score += 3
-    if t == "email": score += 4
-    for v in [ph, lab, lbl_text]:
-        if contains_any(v, USERNAME_HINTS): score += 3
-    if len(safe(ph)) >= 3: score += 1
+    # strong signal
+    if t in ("text", "email"):
+        score += 3
+    if t == "email":
+        score += 4
+    # attribute hints
+    for v in [ph, name, id_, cls, lab]:
+        if contains_any(v, USERNAME_HINTS):
+            score += 3
+    # input length placeholder hint
+    if len(safe(ph)) >= 3:
+        score += 1
+
     return score
 
 
 async def score_password_input(page, el):
-    if not await is_visible(el): return -1
+    if not await is_visible(el):
+        return -1
+
     t = (await el.get_attribute("type") or "").lower()
     ph = await el.get_attribute("placeholder") or ""
-    lab = await el.get_attribute("aria-label") or ""
-    lbl_text = await get_label_text(page, el) or ""
+    name = await el.get_attribute("name") or ""
+    id_ = await el.get_attribute("id") or ""
+    cls = await el.get_attribute("class") or ""
+    lab = await label_text_for(page, el)
 
     score = 0
     if t == "password": score += 6
-    for v in [ph, lab, lbl_text]:
+    # attribute hints
+    for v in [ph, name, id_, cls, lab]:
         if contains_any(v, PASSWORD_HINTS): score += 3
+    if t in ("text", "tel"): score += 1  # sometimes PINs
+
     return score
 
 
 async def score_login_button(el):
-    if not await is_visible(el): return -1
+    if not await is_visible(el):
+        return -1
+    tag = await el.evaluate("e => e.tagName.toLowerCase()")
     text = await el.inner_text() or ""
+    val = await el.get_attribute("value") or ""
+    aria = await el.get_attribute("aria-label") or ""
+    name = await el.get_attribute("name") or ""
+    role = await el.get_attribute("role") or ""
+
+    t_all = " ".join([text, val, aria, name, role]).lower()
     score = 0
-    if contains_any(text, LOGIN_TEXT_HINTS): score += 5
-    t = (await el.get_attribute("type") or "").lower()
-    if t == "submit": score += 2
+    if tag in ("button", "input"):
+        score += 1
+    if contains_any(t_all, LOGIN_TEXT_HINTS):
+        score += 5
+    if await el.evaluate("e => e.type === 'submit' || e.getAttribute('type') === 'submit'"):
+        score += 3
     return score
 
 
@@ -112,14 +142,28 @@ async def find_login_elements_dynamic(page):
         if sp_el >= sp:
             sp, cand_pass = sp_el, el
 
-    btns = await page.query_selector_all("button, input[type='submit'], [role='button'], *:has-text('Sign in'), "
-                                         "*:has-text('Log in')")
+    # fallback: if nothing scored well, try generic input types
+    if not cand_user:
+        cand_user = await page.query_selector("input[type='email'], input[type='text']")
+    if not cand_pass:
+        cand_pass = await page.query_selector("input[type='password']")
+
+    # buttons
+    btns = await page.query_selector_all(
+        "button, input[type='submit'], [role='button'], *:has-text(\"Sign in\"), *:has-text(\"Log in\")"
+    )
+
     cand_btn, sb = None, -1
     for el in btns:
         sbtn = await score_login_button(el)
         if sbtn >= sb:
             sb, cand_btn = sbtn, el
+    if not cand_btn:
+        cand_btn = await page.query_selector("button, input[type='submit']")
 
-    return {"username": {"selector": await build_best_selector(cand_user) if cand_user else None, "score": su},
-            "password": {"selector": await build_best_selector(cand_pass) if cand_pass else None, "score": sp},
-            "button": {"selector": await build_best_selector(cand_btn) if cand_btn else None, "score": sb}}
+    return {
+        "username": {"selector": await build_best_selector(cand_user) if cand_user else None, "score": su},
+        "password": {"selector": await build_best_selector(cand_pass) if cand_pass else None, "score": sp},
+        "button":   {"selector": await build_best_selector(cand_btn) if cand_btn else None, "score": sb}
+    }
+

@@ -21,4 +21,25 @@ def normalize_url(u: str):
     return u if parts.scheme else "https://" + u
 
 
-URL_RE = re.compile(r'https?://[^\s"\'<>]+', re.IGNORECASE)
+async def label_text_for(page, el):
+    # Check <label for="id"> and aria-label & nearby text
+    el_id = await el.get_attribute("id")
+    if el_id:
+        lab = await page.query_selector(f"label[for='{el_id}']")
+        if lab:
+            t = await lab.text_content() or ""
+            if t.strip():
+                return t.strip()
+
+    aria = await el.get_attribute("aria-label")
+    if aria: return aria
+
+    # Try parent container text
+    parent_text = await el.evaluate("""
+      (e) => {
+        if (!e.parentElement) return '';
+        const t = e.parentElement.innerText || '';
+        return t.length > 200 ? t.slice(0,200) : t;
+      }
+    """)
+    return parent_text or ""
