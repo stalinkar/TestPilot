@@ -13,7 +13,7 @@ async def nl_to_flow_internal(prompt: str, headless=True, wait_selector=None):
     if not url:
         return {"error": "No URL in prompt."}
 
-    await init_browser(headless=headless)
+    page = await init_browser(headless=headless)
     await navigate(url)
     if wait_selector:
         try:
@@ -22,11 +22,11 @@ async def nl_to_flow_internal(prompt: str, headless=True, wait_selector=None):
             pass
 
     discovered = await find_login_elements_dynamic(await init_browser())
-    steps = [{"action": "navigate", "url": url}]
-    steps.append(
-        {"action": "fill", "selector": discovered["username"]["selector"], "text": parsed["username"] or "<USERNAME>"})
-    steps.append(
-        {"action": "fill", "selector": discovered["password"]["selector"], "text": parsed["password"] or "<PASSWORD>"})
+    steps = [{"action": "navigate", "url": url},
+             {"action": "fill", "selector": discovered["username"]["selector"],
+              "text": parsed["username"] or "<USERNAME>"},
+             {"action": "fill", "selector": discovered["password"]["selector"],
+              "text": parsed["password"] or "<PASSWORD>"}]
     if discovered["button"]["selector"]:
         steps.append({"action": "click", "selector": discovered["button"]["selector"]})
     steps.append({"action": "wait_for", "selector": "body", "timeout": 5000})
@@ -41,6 +41,7 @@ async def run_flow(steps: list):
     start_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     # report_id = f"flow_{start_time}_{uuid.uuid4().hex[:6]}"
     report_id = f"flow_{start_time}"
+    os.makedirs(REPORTS_DIR, exist_ok=True)
     json_report_file = os.path.join(REPORTS_DIR, f"{report_id}.json")
     html_report_file = os.path.join(REPORTS_DIR, f"{report_id}.html")
 

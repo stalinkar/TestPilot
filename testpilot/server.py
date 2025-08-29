@@ -1,7 +1,9 @@
-from flask import Flask, request, jsonify
 import asyncio
+
+from flask import Flask, request, jsonify
+
+from testpilot.actions import close_browser
 from testpilot.flow import nl_to_flow_internal, run_flow
-from testpilot.actions import navigate, click, fill, wait_for, screenshot, close_browser
 
 app = Flask(__name__)
 loop = asyncio.get_event_loop()

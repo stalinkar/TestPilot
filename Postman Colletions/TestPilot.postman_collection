@@ -1,0 +1,138 @@
+{
+	"info": {
+		"_postman_id": "f97d7c48-bcfd-488a-af9e-6a2ecbf8d105",
+		"name": "MCP",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "41966037"
+	},
+	"item": [
+		{
+			"name": "nl_to_flow",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if(pm.response.code == 200){\r",
+							"    pm.collectionVariables.set(\"run_flow_payload\", JSON.stringify(JSON.parse(pm.response.text()).flow));\r",
+							"}\r",
+							"\r",
+							"var run_flow_payload = JSON.parse(pm.collectionVariables.get(\"run_flow_payload\"))\r",
+							"run_flow_payload.push({\r",
+							"        \"action\": \"close\"\r",
+							"    })\r",
+							"pm.collectionVariables.set(\"run_flow_payload\", JSON.stringify(run_flow_payload));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"prompt\": {{prompt}},\r\n    \"headless\": true\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_uri}}/nl_to_flow",
+					"host": [
+						"{{base_uri}}"
+					],
+					"path": [
+						"nl_to_flow"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "run_flow",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{{run_flow_payload}}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_uri}}/run_flow",
+					"host": [
+						"{{base_uri}}"
+					],
+					"path": [
+						"run_flow"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_uri",
+			"value": "http://localhost:5000"
+		},
+		{
+			"key": "test_url",
+			"value": "https://demoqa.com"
+		},
+		{
+			"key": "run_flow_payload",
+			"value": ""
+		},
+		{
+			"key": "prompt",
+			"value": "",
+			"description": {
+				"content": "",
+				"type": "text/plain"
+			}
+		}
+	]
+}
