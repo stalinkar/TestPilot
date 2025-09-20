@@ -1,9 +1,10 @@
 import os, uuid, json
 from datetime import datetime
-from .nlp_parser import parse_prompt
 from .utils import normalize_url
 from .dom_scanner import find_login_elements_dynamic
 from .actions import init_browser, close_browser, navigate, fill, click, wait_for, screenshot, REPORTS_DIR
+from .nlp_parser import parse_prompt, parse_workflow  # add parse_workflow here
+from .dom_scanner import find_login_elements_dynamic, find_generic_element  # add find_generic_element
 
 
 # ----------- NL -> Flow -----------
@@ -31,6 +32,62 @@ async def nl_to_flow_internal(prompt: str, headless=True, wait_selector=None):
         steps.append({"action": "click", "selector": discovered["button"]["selector"]})
     steps.append({"action": "wait_for", "selector": "body", "timeout": 5000})
     steps.append({"action": "screenshot", "save": True})
+
+    # --- ADDITIVE: multi-step orchestration (non-breaking) ---
+    try:
+        parsed_steps = parse_workflow(prompt)
+    except Exception:
+        parsed_steps = []
+
+    # We already handled login via legacy path; skip it here if present
+    extra_steps = [s for s in parsed_steps if s.get("action") not in ("login", "unknown")]
+
+    # ensure 'steps' and 'discovered' exist (your existing code already defines them)
+    # steps: list of dict actions that run_flow already understands
+    # discovered: dict of name -> selector for report/debug
+
+    for s in extra_steps:
+        act = s["action"]
+        params = s.get("params", {})
+
+        if act == "navigate" and params.get("page") == "profile":
+            sel = await find_generic_element(page, "profile")
+            if sel:
+                discovered["profile"] = sel
+                steps.append({"action": "click", "selector": sel})
+
+        elif act == "update" and params.get("field") == "bio":
+            sel = await find_generic_element(page, "bio")
+            if sel:
+                discovered["bio"] = sel
+                value = params.get("value")
+                steps.append({"action": "fill", "selector": sel, "text": value})
+
+        elif act == "logout":
+            sel = await find_generic_element(page, "logout")
+            if sel:
+                discovered["logout"] = sel
+                steps.append({"action": "click", "selector": sel})
+
+        elif act == "search":
+            q = params.get("query")
+            box = await find_generic_element(page, "search")
+            submit = await find_generic_element(page, "submit")
+            if box:
+                discovered["search"] = box
+                steps.append({"action": "fill", "selector": box, "text": q})
+            if submit:
+                discovered["submit"] = submit
+                steps.append({"action": "click", "selector": submit})
+
+        elif act == "click":
+            target = params.get("target")
+            sel = await find_generic_element(page, target)
+            if sel:
+                discovered[target or "click"] = sel
+                steps.append({"action": "click", "selector": sel})
+
+        # (ignore 'unknown' silently to avoid breaking legacy flow)
 
     await close_browser()
     return {"prompt": prompt, "parsed_entities": parsed, "discovered_selectors": discovered, "flow": steps}

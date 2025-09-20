@@ -11,6 +11,8 @@ loop = asyncio.get_event_loop()
 
 @app.route("/nl_to_flow", methods=["POST"])
 def api_nl_to_flow():
+    if loop.is_running():
+        loop.stop()
     body = request.get_json(force=True) or {}
     prompt = body.get("prompt", "")
     headless = bool(body.get("headless", True))

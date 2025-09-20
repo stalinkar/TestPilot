@@ -167,3 +167,83 @@ async def find_login_elements_dynamic(page):
         "button":   {"selector": await build_best_selector(cand_btn) if cand_btn else None, "score": sb}
     }
 
+# --- Generic element lookup (additive) ---
+
+async def _first_not_none(*vals):
+    for v in vals:
+        if v:
+            return v
+    return None
+
+async def find_generic_element(page, logical_name: str):
+    """
+    Best-effort lookup for common targets beyond login:
+    profile, bio, logout, search, submit, plus a generic click fallback.
+    Returns a CSS selector string or None.
+    """
+    key = (logical_name or "").strip().lower()
+
+    # PROFILE link/button
+    if key in ("profile", "profile link", "go to profile"):
+        el = await _first_not_none(
+            await page.query_selector("*:has-text('Profile')"),
+            await page.query_selector("#profile"),
+            await page.query_selector("[data-test='profile']")
+        )
+        return await build_best_selector(el) if el else None
+
+    # BIO input/textarea
+    if key in ("bio", "biography"):
+        el = await _first_not_none(
+            await page.query_selector("textarea#bio"),
+            await page.query_selector("textarea[name*='bio']"),
+            await page.query_selector("input#bio"),
+            await page.query_selector("input[name*='bio']")
+        )
+        return await build_best_selector(el) if el else None
+
+    # LOGOUT
+    if key in ("logout", "log out", "sign out"):
+        el = await _first_not_none(
+            await page.query_selector("*:has-text('Logout')"),
+            await page.query_selector("*:has-text('Log out')"),
+            await page.query_selector("*:has-text('Sign out')"),
+            await page.query_selector("#logout"),
+            await page.query_selector("[data-test='logout']")
+        )
+        return await build_best_selector(el) if el else None
+
+    # SEARCH box
+    if key in ("search", "search box"):
+        el = await _first_not_none(
+            await page.query_selector("input[type='search']"),
+            await page.query_selector("input#search"),
+            await page.query_selector("input[name*='search']")
+        )
+        return await build_best_selector(el) if el else None
+
+    # SUBMIT button
+    if key in ("submit", "save", "apply"):
+        el = await _first_not_none(
+            await page.query_selector("button[type='submit']"),
+            await page.query_selector("input[type='submit']"),
+            await page.query_selector("*:has-text('Save')"),
+            await page.query_selector("*:has-text('Apply')")
+        )
+        return await build_best_selector(el) if el else None
+
+    # If the logical name looks like a direct CSS (#id or .class), pass through
+    if key.startswith("#") or key.startswith("."):
+        el = await page.query_selector(key)
+        return await build_best_selector(el) if el else key
+
+    # Generic text-based button/link click
+    if key:
+        el = await _first_not_none(
+            await page.query_selector(f"*:has-text('{logical_name}')")
+        )
+        return await build_best_selector(el) if el else None
+
+    return None
+
+

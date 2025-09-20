@@ -58,3 +58,65 @@ def parse_prompt(prompt: str):
     password = _extract_value(text_wo_url, PASSWORD_KEYS)
 
     return {"url": url, "username": username, "password": password}
+
+
+# --- Multi-step parsing: additive, non-breaking ---
+
+# Split on commas/semicolons and simple coordinators
+SPLIT_RE = re.compile(r"\s*(?:,|;|\band then\b|\bthen\b|\band\b)\s*", re.IGNORECASE)
+
+
+def split_into_steps(prompt: str):
+    parts = [p.strip() for p in SPLIT_RE.split(prompt or "") if p and p.strip()]
+    return parts
+
+
+def parse_step(step: str):
+    """
+    Lightweight intent detector. Uses lowercase only for detection,
+    extracts values from the ORIGINAL 'step' to preserve case.
+    """
+    s = step.lower()
+
+    # login
+    if "login" in s or "log in" in s:
+        # try to extract user if present
+        m = re.search(r"user\s+([A-Za-z0-9._%+\-@]+)", step, re.IGNORECASE)
+        username = m.group(1) if m else None
+        return {"action": "login", "params": {"username": username}}
+
+    # navigate → profile
+    if "profile" in s and ("go to" in s or "navigate" in s or "open" in s):
+        return {"action": "navigate", "params": {"page": "profile"}}
+
+    # update bio
+    if "update" in s and "bio" in s:
+        m = re.search(r"bio\s*(?:to|as|=)\s*(.+)", step, re.IGNORECASE)
+        value = m.group(1).strip() if m else None
+        return {"action": "update", "params": {"field": "bio", "value": value}}
+
+    # logout
+    if "logout" in s or "log out" in s or "sign out" in s:
+        return {"action": "logout", "params": {}}
+
+    # search
+    if s.startswith("search") or "search for" in s:
+        m = re.search(r"search\s+(?:for\s+)?['\"]?([^'\"\n]+)['\"]?", step, re.IGNORECASE)
+        query = m.group(1).strip() if m else None
+        return {"action": "search", "params": {"query": query}}
+
+    # click <target>
+    if "click" in s:
+        m = re.search(r"click\s+([A-Za-z0-9_\-#. \[\]=:]+)", step, re.IGNORECASE)
+        target = m.group(1).strip() if m else None
+        return {"action": "click", "params": {"target": target}}
+
+    return {"action": "unknown", "params": {"raw": step}}
+
+
+def parse_workflow(prompt: str):
+    """
+    Returns a list of structured steps. Non-breaking: existing code still uses parse_prompt().
+    """
+    steps = split_into_steps(prompt or "")
+    return [parse_step(s) for s in steps]
